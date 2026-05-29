@@ -19,6 +19,10 @@ let trackLine = null;
 let mapReady = false;
 let userConsent = false;
 
+// Device Sensors
+let currentHeading = 0;
+let compassMarker = null;
+
 // Elements
 const statusEl = document.getElementById('status');
 const accuracyEl = document.getElementById('accuracy');
@@ -65,6 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     initMap();
+    initDeviceSensors();
     checkOnlineStatus();
 
     console.log(`GPS Tracker v${VERSION} ready`);
@@ -113,6 +118,33 @@ async function registerServiceWorker() {
     }
 }
 
+// Device Sensors Initialization
+function initDeviceSensors() {
+    // Device Orientation (Compass Heading)
+    if (window.DeviceOrientationEvent) {
+        window.addEventListener('deviceorientation', (event) => {
+            // event.alpha: rotation around Z axis (0-360) - HEADING
+            // event.beta: rotation around X axis (-180 to 180)
+            // event.gamma: rotation around Y axis (-90 to 90)
+
+            currentHeading = Math.round(event.alpha) || 0;
+            console.log(`Heading: ${currentHeading}°`);
+        });
+    }
+
+    // Accelerometer (Motion)
+    if (window.DeviceMotionEvent) {
+        window.addEventListener('devicemotion', (event) => {
+            // event.acceleration.x, y, z
+            // event.accelerationIncludingGravity.x, y, z
+            // event.rotationRate.alpha, beta, gamma
+            // Useful for detecting movement patterns
+        });
+    }
+
+    console.log('Device sensors initialized');
+}
+
 // Map Initialization
 function initMap() {
     try {
@@ -144,16 +176,32 @@ function updateMapMarker(lat, lon, accuracy) {
     // Remove old marker and accuracy circle
     if (locationMarker) map.removeLayer(locationMarker);
     if (accuracyCircle) map.removeLayer(accuracyCircle);
+    if (compassMarker) map.removeLayer(compassMarker);
 
-    // Add new marker
-    locationMarker = L.circleMarker([lat, lon], {
-        radius: 8,
-        fillColor: '#1976d2',
-        color: '#fff',
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.8
-    }).addTo(map);
+    // Create heading arrow (compass)
+    const headingIcon = L.divIcon({
+        html: `<div style="
+            width: 30px;
+            height: 30px;
+            background: #4caf50;
+            border: 2px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 12px;
+            transform: rotate(${currentHeading}deg);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        ">↑</div>`,
+        iconSize: [30, 30],
+        className: 'compass-marker'
+    });
+
+    // Add compass marker with heading
+    compassMarker = L.marker([lat, lon], { icon: headingIcon }).addTo(map);
+    compassMarker.bindPopup(`Heading: ${currentHeading}°`);
 
     // Add accuracy circle
     accuracyCircle = L.circle([lat, lon], {
@@ -350,7 +398,7 @@ function onLocationSuccess(position) {
 
     lastLocation = { latitude, longitude };
 
-    // Store in DB
+    // Store in DB (use device heading if GPS heading unavailable)
     if (tracking) {
         storeLocation({
             trackId: currentTrackId,
@@ -359,7 +407,8 @@ function onLocationSuccess(position) {
             altitude,
             accuracy,
             speed: speed || 0,
-            heading: heading || 0,
+            heading: heading || currentHeading || 0,
+            deviceHeading: currentHeading || 0,
             timestamp: Date.now()
         });
     }
@@ -481,29 +530,60 @@ async function clearHistory() {
 async function exportData() {
     const locations = await getAllLocations();
 
-    const data = {
-        version: VERSION,
-        exportDate: new Date().toISOString(),
-        totalPoints: locations.length,
-        locations: locations.map(loc => ({
-            latitude: loc.latitude,
-            longitude: loc.longitude,
-            altitude: loc.altitude,
-            accuracy: loc.accuracy,
-            speed: loc.speed,
-            heading: loc.heading,
-            timestamp: new Date(loc.timestamp).toISOString()
-        }))
+    if (locations.length === 0) {
+        alert('No tracking data to export');
+        return;
+    }
+
+    // Export as GeoJSON (compatible with MapShaper, QGIS, etc.)
+    const coordinates = locations.map(loc => [loc.longitude, loc.latitude]);
+
+    const geoJSON = {
+        type: 'FeatureCollection',
+        features: [
+            // Track as LineString
+            {
+                type: 'Feature',
+                geometry: {
+                    type: 'LineString',
+                    coordinates: coordinates
+                },
+                properties: {
+                    name: 'GPS Track',
+                    totalPoints: locations.length,
+                    totalDistance: `${(totalDistance / 1000).toFixed(2)} km`,
+                    exportDate: new Date().toISOString()
+                }
+            },
+            // Individual points as separate features
+            ...locations.map((loc, idx) => ({
+                type: 'Feature',
+                geometry: {
+                    type: 'Point',
+                    coordinates: [loc.longitude, loc.latitude]
+                },
+                properties: {
+                    index: idx + 1,
+                    altitude: loc.altitude,
+                    accuracy: loc.accuracy,
+                    speed: `${(loc.speed * 3.6).toFixed(2)} km/h`,
+                    heading: `${loc.heading}°`,
+                    timestamp: new Date(loc.timestamp).toISOString()
+                }
+            }))
+        ]
     };
 
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
+    const json = JSON.stringify(geoJSON, null, 2);
+    const blob = new Blob([json], { type: 'application/geo+json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `gps-track-${Date.now()}.json`;
+    a.download = `gps-track-${Date.now()}.geojson`;
     a.click();
     URL.revokeObjectURL(url);
+
+    console.log('GeoJSON exported successfully');
 }
 
 async function showHistory() {
