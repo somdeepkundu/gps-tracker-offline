@@ -273,10 +273,12 @@ html, body {
     z-index: 1000;
     align-items: center;
     justify-content: center;
+    pointer-events: none;
 }
 
 .modal.active {
     display: flex;
+    pointer-events: auto;
 }
 
 .modal-content {

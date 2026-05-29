@@ -47,6 +47,8 @@ const declineConsentBtn = document.getElementById('declineConsent');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOMContentLoaded - Initializing GPS Tracker');
+
     await initDB();
     registerServiceWorker();
     setupEventListeners();
@@ -54,11 +56,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Check for existing consent
     if (!checkExistingConsent()) {
         // Show privacy consent modal
-        privacyModal.classList.add('active');
+        if (privacyModal) {
+            privacyModal.classList.add('active');
+            console.log('Privacy modal shown');
+        } else {
+            console.error('Privacy modal element not found!');
+        }
     }
 
     initMap();
     checkOnlineStatus();
+
+    console.log(`GPS Tracker v${VERSION} ready`);
 
     window.addEventListener('online', () => {
         updateStatus(true);
@@ -186,17 +195,28 @@ function checkExistingConsent() {
 }
 
 function handleConsent(accepted) {
+    console.log('Handling consent:', accepted);
     userConsent = accepted;
 
-    if (accepted) {
-        localStorage.setItem('gps-tracker-consent', 'accepted');
-        privacyModal.classList.remove('active');
-    } else {
-        localStorage.setItem('gps-tracker-consent', 'declined');
-        privacyModal.classList.remove('active');
-        startBtn.disabled = true;
-        startBtn.textContent = 'View Only Mode';
-        clearBtn.disabled = true;
+    try {
+        if (accepted) {
+            localStorage.setItem('gps-tracker-consent', 'accepted');
+            console.log('Consent accepted');
+        } else {
+            localStorage.setItem('gps-tracker-consent', 'declined');
+            console.log('Consent declined');
+            startBtn.disabled = true;
+            startBtn.textContent = 'View Only Mode';
+            clearBtn.disabled = true;
+        }
+
+        // Hide modal
+        if (privacyModal) {
+            privacyModal.classList.remove('active');
+            console.log('Modal hidden');
+        }
+    } catch (error) {
+        console.error('Error in handleConsent:', error);
     }
 }
 
@@ -209,8 +229,24 @@ function setupEventListeners() {
     historyBtn.addEventListener('click', showHistory);
     closeHistoryBtn.addEventListener('click', closeHistory);
 
-    acceptConsentBtn.addEventListener('click', () => handleConsent(true));
-    declineConsentBtn.addEventListener('click', () => handleConsent(false));
+    // Consent buttons
+    if (acceptConsentBtn) {
+        acceptConsentBtn.addEventListener('click', () => {
+            console.log('Accept clicked');
+            handleConsent(true);
+        });
+    } else {
+        console.error('acceptConsentBtn not found');
+    }
+
+    if (declineConsentBtn) {
+        declineConsentBtn.addEventListener('click', () => {
+            console.log('Decline clicked');
+            handleConsent(false);
+        });
+    } else {
+        console.error('declineConsentBtn not found');
+    }
 }
 
 // GPS Tracking
