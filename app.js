@@ -1,4 +1,4 @@
-const VERSION = '0.3.0';
+const VERSION = '0.3.1';
 
 // DB Setup
 const DB_NAME = 'GPSTrackerDB';
@@ -21,9 +21,11 @@ let userConsent = false;
 
 // Device Sensors
 let currentHeading = 0;
+let lastDisplayedHeading = -999; // Track last displayed value
 let compassMarker = null;
 let lastHeadingUpdate = 0;
-let headingUpdateInterval = 500; // ms - throttle updates to prevent flickering
+let headingUpdateInterval = 1000; // ms - Aggressive throttle (1 second)
+let headingDeadzone = 2; // Only update if changed by > 2 degrees
 
 // Sampling
 let samplingFrequency = 1; // points per minute
@@ -134,25 +136,30 @@ async function registerServiceWorker() {
 
 // Device Sensors Initialization
 function initDeviceSensors() {
-    // Device Orientation (Compass Heading) - THROTTLED to prevent flickering
+    // Device Orientation (Compass Heading) - AGGRESSIVE DEBOUNCING for mobile
     if (window.DeviceOrientationEvent) {
         window.addEventListener('deviceorientation', (event) => {
             const now = Date.now();
 
-            // Throttle updates to prevent flickering
+            // Throttle: Don't process more than once per second
             if (now - lastHeadingUpdate < headingUpdateInterval) {
                 return;
             }
 
             lastHeadingUpdate = now;
 
-            // event.alpha: rotation around Z axis (0-360) - HEADING
-            // Fix: Proper heading calculation (0 = North, 90 = East, 180 = South, 270 = West)
-            let heading = event.alpha;
-
-            // Ensure heading is between 0-360
+            // Calculate heading (0 = North, 90 = East, 180 = South, 270 = West)
+            let heading = Math.round(event.alpha);
             heading = (heading + 360) % 360;
-            currentHeading = Math.round(heading);
+
+            // Deadzone: Only update if changed by more than 2 degrees
+            const headingDiff = Math.abs(heading - lastDisplayedHeading);
+            if (headingDiff < headingDeadzone && lastDisplayedHeading !== -999) {
+                return; // Skip tiny changes to prevent flickering
+            }
+
+            currentHeading = heading;
+            lastDisplayedHeading = heading;
 
             // Update heading display
             const direction = getDirectionName(currentHeading);
@@ -161,7 +168,7 @@ function initDeviceSensors() {
             // Update compass on map
             updateCompassMarker();
 
-            console.log(`Heading: ${currentHeading}° (${direction})`);
+            console.log(`Heading updated: ${currentHeading}° (${direction})`);
         });
     } else {
         console.warn('DeviceOrientation not supported on this device');
@@ -246,8 +253,20 @@ function initMap() {
     }
 }
 
+let lastMapMarkerUpdate = 0;
+const mapMarkerUpdateInterval = 2000; // Update map marker max every 2 seconds
+
 function updateMapMarker(lat, lon, accuracy) {
     if (!map || !mapReady) return;
+
+    const now = Date.now();
+
+    // Throttle map updates to prevent flickering
+    if (now - lastMapMarkerUpdate < mapMarkerUpdateInterval) {
+        return;
+    }
+
+    lastMapMarkerUpdate = now;
 
     // Remove old marker and accuracy circle
     if (locationMarker) map.removeLayer(locationMarker);
@@ -598,7 +617,19 @@ async function clearLocations() {
     });
 }
 
+let lastPointCountUpdate = 0;
+const pointCountUpdateInterval = 2000; // Update point count max every 2 seconds
+
 async function updatePointCount() {
+    const now = Date.now();
+
+    // Throttle point count updates to reduce flickering
+    if (now - lastPointCountUpdate < pointCountUpdateInterval) {
+        return;
+    }
+
+    lastPointCountUpdate = now;
+
     const locations = await getLocations(currentTrackId);
     pointCountEl.textContent = locations.length;
 }
