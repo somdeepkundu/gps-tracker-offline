@@ -57,6 +57,17 @@
                 </div>
             </div>
 
+            <div class="sampling-control">
+                <label for="samplingSelect">📊 Data Points Per Minute:</label>
+                <select id="samplingSelect" class="sampling-select">
+                    <option value="1">1 point/min (Low - Battery Saver)</option>
+                    <option value="5" selected>5 points/min (Normal)</option>
+                    <option value="10">10 points/min (High - Detailed)</option>
+                    <option value="20">20 points/min (Very High - Detailed)</option>
+                    <option value="0">All points (No sampling)</option>
+                </select>
+            </div>
+
             <div class="button-group">
                 <button id="startBtn" class="btn btn-primary">Start Tracking</button>
                 <button id="stopBtn" class="btn btn-secondary" disabled>Stop Tracking</button>

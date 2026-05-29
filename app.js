@@ -1,4 +1,4 @@
-const VERSION = '0.2.0';
+const VERSION = '0.2.1';
 
 // DB Setup
 const DB_NAME = 'GPSTrackerDB';
@@ -23,6 +23,10 @@ let userConsent = false;
 let currentHeading = 0;
 let compassMarker = null;
 
+// Sampling
+let samplingFrequency = 1; // points per minute
+let lastSavedTime = 0; // timestamp of last saved point
+
 // Elements
 const statusEl = document.getElementById('status');
 const accuracyEl = document.getElementById('accuracy');
@@ -42,6 +46,7 @@ const stopBtn = document.getElementById('stopBtn');
 const clearBtn = document.getElementById('clearBtn');
 const exportBtn = document.getElementById('exportBtn');
 const historyBtn = document.getElementById('historyBtn');
+const samplingSelect = document.getElementById('samplingSelect');
 
 const historyModal = document.getElementById('historyModal');
 const closeHistoryBtn = document.getElementById('closeHistory');
@@ -312,6 +317,12 @@ function setupEventListeners() {
     historyBtn.addEventListener('click', showHistory);
     closeHistoryBtn.addEventListener('click', closeHistory);
 
+    // Sampling frequency selector
+    samplingSelect.addEventListener('change', (e) => {
+        samplingFrequency = parseInt(e.target.value);
+        console.log(`Sampling frequency changed to: ${samplingFrequency} points/min`);
+    });
+
     // Consent buttons
     if (acceptConsentBtn) {
         acceptConsentBtn.addEventListener('click', () => {
@@ -351,6 +362,12 @@ function startTracking() {
     trackStartTime = Date.now();
     totalDistance = 0;
     lastLocation = null;
+    lastSavedTime = Date.now();
+
+    // Disable sampling control while tracking
+    samplingSelect.disabled = true;
+
+    console.log(`Tracking started - Sampling: ${samplingFrequency} points/min`);
 
     startBtn.disabled = true;
     stopBtn.disabled = false;
@@ -391,6 +408,7 @@ function stopTracking() {
     startBtn.disabled = false;
     stopBtn.disabled = true;
     clearBtn.disabled = false;
+    samplingSelect.disabled = false;
     mapStatusEl.textContent = 'Tracking stopped';
 
     setTimeout(() => {
@@ -433,23 +451,33 @@ function onLocationSuccess(position) {
 
     lastLocation = { latitude, longitude };
 
-    // Store in DB (use device heading if GPS heading unavailable)
+    // Store in DB with sampling frequency control
     if (tracking) {
-        storeLocation({
-            trackId: currentTrackId,
-            latitude,
-            longitude,
-            altitude,
-            accuracy,
-            speed: speed || 0,
-            heading: heading || currentHeading || 0,
-            deviceHeading: currentHeading || 0,
-            timestamp: Date.now()
-        });
-    }
+        const now = Date.now();
+        const timeSinceLastPoint = (now - lastSavedTime) / 1000; // seconds
+        const minIntervalMs = samplingFrequency > 0 ? (60 / samplingFrequency) * 1000 : 0; // ms
 
-    // Update point count
-    updatePointCount();
+        // Check if enough time has passed to save this point
+        if (samplingFrequency === 0 || timeSinceLastPoint >= (minIntervalMs / 1000)) {
+            storeLocation({
+                trackId: currentTrackId,
+                latitude,
+                longitude,
+                altitude,
+                accuracy,
+                speed: speed || 0,
+                heading: heading || currentHeading || 0,
+                deviceHeading: currentHeading || 0,
+                timestamp: now
+            });
+
+            lastSavedTime = now;
+            console.log(`Point saved (${samplingFrequency} pts/min)`);
+
+            // Update point count
+            updatePointCount();
+        }
+    }
 }
 
 function onLocationError(error) {
