@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1976d2">
+    <meta name="description" content="Offline GPS location tracker with real-time monitoring">
+    <title>GPS Tracker - Offline</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%231976d2' width='192' height='192'/><circle cx='96' cy='96' r='40' fill='%23fff'/><circle cx='96' cy='96' r='24' fill='%231976d2'/></svg>">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>📍 GPS Tracker</h1>
+            <div class="status-bar">
+                <span id="status" class="status offline">Offline</span>
+                <span id="accuracy" class="accuracy"></span>
+            </div>
+        </header>
+
+        <!-- Map Container -->
+        <div id="map" class="map-container">
+            <div class="map-placeholder">
+                <p>Map will load here</p>
+                <p id="map-status">Initializing...</p>
+            </div>
+        </div>
+
+        <!-- Controls Panel -->
+        <div class="controls-panel">
+            <div class="location-info">
+                <div class="info-item">
+                    <span class="label">Latitude:</span>
+                    <span id="latitude" class="value">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Longitude:</span>
+                    <span id="longitude" class="value">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Altitude:</span>
+                    <span id="altitude" class="value">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Speed:</span>
+                    <span id="speed" class="value">--</span>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button id="startBtn" class="btn btn-primary">Start Tracking</button>
+                <button id="stopBtn" class="btn btn-secondary" disabled>Stop Tracking</button>
+                <button id="clearBtn" class="btn btn-danger">Clear History</button>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">Distance:</span>
+                    <span id="distance" class="stat-value">0 km</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Points:</span>
+                    <span id="pointCount" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Duration:</span>
+                    <span id="duration" class="stat-value">0s</span>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button id="exportBtn" class="btn btn-outline">Export as JSON</button>
+                <button id="historyBtn" class="btn btn-outline">View History</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Tracking History</h2>
+                <button class="close-btn" id="closeHistory">&times;</button>
+            </div>
+            <div id="historyList" class="history-list"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
