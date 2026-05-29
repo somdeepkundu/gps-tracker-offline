@@ -2,12 +2,12 @@
     "name": "GPS Tracker - Offline",
     "short_name": "GPS Tracker",
     "description": "Progressive Web App for offline GPS tracking with real-time location monitoring, responsive design, and local data storage using open-source APIs and mobile hardware capabilities.",
-    "start_url": "/",
+    "start_url": "/gps-tracker-offline/",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#1976d2",
     "orientation": "portrait-primary",
-    "scope": "/",
+    "scope": "/gps-tracker-offline/",
     "icons": [
         {
             "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%231976d2' width='192' height='192'/><circle cx='96' cy='96' r='40' fill='%23fff'/><circle cx='96' cy='96' r='24' fill='%231976d2'/></svg>",

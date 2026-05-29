@@ -1,10 +1,11 @@
 const CACHE_NAME = 'gps-tracker-v1';
+const BASE_PATH = '/gps-tracker-offline/';
 const urlsToCache = [
-    '/',
-    '/index.html',
-    '/app.js',
-    '/styles.css',
-    '/manifest.json'
+    BASE_PATH,
+    BASE_PATH + 'index.html',
+    BASE_PATH + 'app.js',
+    BASE_PATH + 'styles.css',
+    BASE_PATH + 'manifest.json'
 ];
 
 // Install event
@@ -67,7 +68,7 @@ self.addEventListener('fetch', event => {
 
                         // Return a custom offline page if needed
                         if (event.request.destination === 'document') {
-                            return caches.match('/index.html');
+                            return caches.match(BASE_PATH + 'index.html');
                         }
 
                         return new Response('Offline - Resource not available', {
