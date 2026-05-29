@@ -1,4 +1,4 @@
-const VERSION = '0.2.1';
+const VERSION = '0.3.0';
 
 // DB Setup
 const DB_NAME = 'GPSTrackerDB';
@@ -22,6 +22,8 @@ let userConsent = false;
 // Device Sensors
 let currentHeading = 0;
 let compassMarker = null;
+let lastHeadingUpdate = 0;
+let headingUpdateInterval = 500; // ms - throttle updates to prevent flickering
 
 // Sampling
 let samplingFrequency = 1; // points per minute
@@ -132,23 +134,37 @@ async function registerServiceWorker() {
 
 // Device Sensors Initialization
 function initDeviceSensors() {
-    // Device Orientation (Compass Heading)
+    // Device Orientation (Compass Heading) - THROTTLED to prevent flickering
     if (window.DeviceOrientationEvent) {
         window.addEventListener('deviceorientation', (event) => {
-            // event.alpha: rotation around Z axis (0-360) - HEADING
-            // event.beta: rotation around X axis (-180 to 180)
-            // event.gamma: rotation around Y axis (-90 to 90)
+            const now = Date.now();
 
-            currentHeading = Math.round(event.alpha) || 0;
+            // Throttle updates to prevent flickering
+            if (now - lastHeadingUpdate < headingUpdateInterval) {
+                return;
+            }
+
+            lastHeadingUpdate = now;
+
+            // event.alpha: rotation around Z axis (0-360) - HEADING
+            // Fix: Proper heading calculation (0 = North, 90 = East, 180 = South, 270 = West)
+            let heading = event.alpha;
+
+            // Ensure heading is between 0-360
+            heading = (heading + 360) % 360;
+            currentHeading = Math.round(heading);
 
             // Update heading display
-            headingEl.textContent = `🧭 ${currentHeading}° ${getDirectionName(currentHeading)}`;
+            const direction = getDirectionName(currentHeading);
+            headingEl.innerHTML = `🧭 <strong>${currentHeading}°</strong> <span class="direction-name">${direction}</span>`;
 
-            // Update compass on map in real-time
+            // Update compass on map
             updateCompassMarker();
 
-            console.log(`Heading: ${currentHeading}°`);
+            console.log(`Heading: ${currentHeading}° (${direction})`);
         });
+    } else {
+        console.warn('DeviceOrientation not supported on this device');
     }
 
     // Accelerometer (Motion)
@@ -164,18 +180,38 @@ function initDeviceSensors() {
     console.log('Device sensors initialized');
 }
 
-// Update compass marker rotation in real-time
+// Update compass marker rotation in real-time with smooth animation
 function updateCompassMarker() {
     if (!map || !mapReady || !compassMarker) return;
 
-    // Update the compass marker icon rotation
+    // Update the compass marker icon rotation with smooth CSS transition
     const compassElement = document.querySelector('.compass-marker');
     if (compassElement) {
+        // Use CSS transition for smooth rotation
         compassElement.style.transform = `rotate(${currentHeading}deg)`;
     }
 
-    // Update popup
-    compassMarker.setPopupContent(`Heading: ${currentHeading}°<br/>Direction: ${getDirectionName(currentHeading)}`);
+    // Update compass widget on map
+    const compassNeedle = document.getElementById('compassNeedle');
+    const compassDegrees = document.getElementById('compassDegrees');
+
+    if (compassNeedle) {
+        compassNeedle.style.transform = `rotate(${currentHeading}deg)`;
+    }
+    if (compassDegrees) {
+        compassDegrees.textContent = `${currentHeading}°`;
+    }
+
+    // Update popup with direction info
+    const direction = getDirectionName(currentHeading);
+    if (compassMarker) {
+        compassMarker.setPopupContent(`
+            <div style="text-align: center; padding: 8px;">
+                <strong style="font-size: 14px;">🧭 ${currentHeading}°</strong><br/>
+                <span style="font-size: 12px; color: #666;">${direction}</span>
+            </div>
+        `);
+    }
 }
 
 // Get compass direction name (N, NE, E, SE, etc.)

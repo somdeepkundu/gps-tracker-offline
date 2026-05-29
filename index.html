@@ -31,6 +31,21 @@
         <!-- Map Container -->
         <div id="mapContainer" class="map-container">
             <div id="map" class="map-leaflet"></div>
+
+            <!-- Compass Widget -->
+            <div class="compass-widget">
+                <div class="compass-circle">
+                    <div class="compass-needle" id="compassNeedle"></div>
+                    <div class="compass-markers">
+                        <div class="marker n">N</div>
+                        <div class="marker e">E</div>
+                        <div class="marker s">S</div>
+                        <div class="marker w">W</div>
+                    </div>
+                    <div class="compass-center" id="compassDegrees">0°</div>
+                </div>
+            </div>
+
             <div class="map-overlay">
                 <p id="map-status">Initializing map...</p>
             </div>
