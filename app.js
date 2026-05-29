@@ -12,6 +12,11 @@ let currentTrackId = null;
 let trackStartTime = null;
 let lastLocation = null;
 let totalDistance = 0;
+let map = null;
+let locationMarker = null;
+let accuracyCircle = null;
+let trackLine = null;
+let mapReady = false;
 
 // Elements
 const statusEl = document.getElementById('status');
@@ -40,6 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await initDB();
     registerServiceWorker();
     setupEventListeners();
+    initMap();
     checkOnlineStatus();
 
     window.addEventListener('online', () => {
@@ -84,6 +90,76 @@ async function registerServiceWorker() {
             console.log('Service Worker registration failed:', error);
         }
     }
+}
+
+// Map Initialization
+function initMap() {
+    try {
+        const mapElement = document.getElementById('map');
+        if (!mapElement) return;
+
+        // Default to Mumbai coordinates
+        map = L.map('map').setView([19.0760, 72.8777], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19,
+            minZoom: 3
+        }).addTo(map);
+
+        mapReady = true;
+        mapStatusEl.textContent = '';
+        mapStatusEl.parentElement.classList.remove('active');
+        console.log('Map initialized');
+    } catch (error) {
+        console.error('Map initialization failed:', error);
+        mapStatusEl.textContent = 'Map unavailable - offline mode';
+    }
+}
+
+function updateMapMarker(lat, lon, accuracy) {
+    if (!map || !mapReady) return;
+
+    // Remove old marker and accuracy circle
+    if (locationMarker) map.removeLayer(locationMarker);
+    if (accuracyCircle) map.removeLayer(accuracyCircle);
+
+    // Add new marker
+    locationMarker = L.circleMarker([lat, lon], {
+        radius: 8,
+        fillColor: '#1976d2',
+        color: '#fff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.8
+    }).addTo(map);
+
+    // Add accuracy circle
+    accuracyCircle = L.circle([lat, lon], {
+        radius: accuracy,
+        color: '#1976d2',
+        fillColor: '#1976d2',
+        weight: 1,
+        opacity: 0.2,
+        fillOpacity: 0.1
+    }).addTo(map);
+
+    // Center map on marker
+    map.panTo([lat, lon]);
+}
+
+function addTrackPoint(lat, lon) {
+    if (!map || !mapReady) return;
+
+    if (!trackLine) {
+        trackLine = L.polyline([], {
+            color: '#4caf50',
+            weight: 3,
+            opacity: 0.7
+        }).addTo(map);
+    }
+
+    trackLine.addLatLng([lat, lon]);
 }
 
 // Event Listeners
@@ -149,6 +225,10 @@ function stopTracking() {
     stopBtn.disabled = true;
     clearBtn.disabled = false;
     mapStatusEl.textContent = 'Tracking stopped';
+
+    setTimeout(() => {
+        if (!tracking) mapStatusEl.textContent = '';
+    }, 2000);
 }
 
 function onLocationSuccess(position) {
@@ -160,12 +240,27 @@ function onLocationSuccess(position) {
     lonEl.textContent = longitude.toFixed(6);
     altEl.textContent = altitude ? altitude.toFixed(2) + ' m' : '--';
     speedEl.textContent = speed ? (speed * 3.6).toFixed(2) + ' km/h' : '0 km/h';
-    accuracyEl.textContent = `±${accuracy.toFixed(0)}m`;
 
-    // Calculate distance
+    // Show accuracy only if poor (> 20m)
+    if (accuracy > 20) {
+        accuracyEl.textContent = `Accuracy: ±${accuracy.toFixed(0)}m`;
+    } else {
+        accuracyEl.textContent = '✓ Good signal';
+    }
+
+    // Update map
+    updateMapMarker(latitude, longitude, accuracy);
+
+    // Calculate distance with drift filter
     if (lastLocation && tracking) {
         const distance = calculateDistance(lastLocation, { latitude, longitude });
-        totalDistance += distance;
+
+        // Only count movement if greater than accuracy radius (GPS drift threshold)
+        if (distance > accuracy) {
+            totalDistance += distance;
+            addTrackPoint(latitude, longitude);
+        }
+
         distanceEl.textContent = (totalDistance / 1000).toFixed(2) + ' km';
     }
 
@@ -284,7 +379,18 @@ async function clearHistory() {
         distanceEl.textContent = '0 km';
         durationEl.textContent = '0s';
         totalDistance = 0;
+        lastLocation = null;
+
+        // Clear map track
+        if (trackLine && map) {
+            map.removeLayer(trackLine);
+            trackLine = null;
+        }
+
         mapStatusEl.textContent = 'History cleared';
+        setTimeout(() => {
+            mapStatusEl.textContent = '';
+        }, 2000);
     }
 }
 

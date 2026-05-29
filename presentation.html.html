@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gyroscope & Orientation API Code</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e9ecef;
+            color: #333;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+        }
+        
+        /* Slide Container Styles */
+        .slide {
+            background: #ffffff;
+            width: 100%;
+            max-width: 800px;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            padding: 40px;
+            box-sizing: border-box;
+        }
+
+        .slide h2 {
+            margin-top: 0;
+            color: #2c3e50;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* Code Block Styles */
+        pre {
+            background-color: #282c34;
+            color: #abb2bf;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 14px;
+            line-height: 1.5;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        code {
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* Syntax Highlighting Colors (Basic) */
+        .tag { color: #e06c75; }
+        .attr { color: #d19a66; }
+        .val { color: #98c379; }
+        .keyword { color: #c678dd; }
+        .built-in { color: #e5c07b; }
+        .comment { color: #7f848e; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <div class="slide">
+        <h2>1. UI Structure & Styling (gyroscope.html)</h2>
+        <pre><code><span class="comment">&lt;!-- https://www.w3.org/TR/gyroscope/ --&gt;</span>
+<span class="tag">&lt;style&gt;</span>
+body {
+    background: black;
+    color: white;
+}
+
+#ball {
+    position: absolute;
+    border-radius: 100%;
+    outline: #FFF dashed 20px;
+    background: radial-gradient(#fff7a7, #ffd100);
+    width: 150px;
+    height: 150px;
+    left: 45%;
+    top: 35%;
+    transition: left 0.2s linear, top 0.2s linear, transform 0.2s linear;
+}
+<span class="tag">&lt;/style&gt;</span>
+
+<span class="tag">&lt;div</span> <span class="attr">id</span>=<span class="val">"report_box"</span><span class="tag">&gt;&lt;/div&gt;</span>
+<span class="tag">&lt;div</span> <span class="attr">id</span>=<span class="val">"ball"</span><span class="tag">&gt;&lt;/div&gt;</span></code></pre>
+    </div>
+
+    <div class="slide">
+        <h2>2. Gyroscope Sensor API & Ball Animation</h2>
+        <pre><code><span class="tag">&lt;script&gt;</span>
+    <span class="keyword">let</span> sensor = <span class="keyword">new</span> <span class="built-in">Gyroscope</span>();
+    <span class="keyword">let</span> x, y, z, report;
+    
+    sensor.start();
+    
+    sensor.onreading = () =&gt; {
+        report = <span class="val">"X-axis Angle Velocity: "</span> + sensor.x + <span class="val">"&lt;br&gt;"</span>;
+        report += <span class="val">"Y-axis Angle Velocity: "</span> + sensor.y + <span class="val">"&lt;br&gt;"</span>;
+        report += <span class="val">"Z-axis Angle Velocity: "</span> + sensor.z + <span class="val">"&lt;br&gt;"</span>;
+        report += <span class="val">"Ball current X = "</span> + ball.offsetLeft + <span class="val">"&lt;br&gt;"</span>;
+        report += <span class="val">"Ball current Y = "</span> + ball.offsetTop + <span class="val">"&lt;br&gt;"</span>;
+        report += <span class="val">"Ball current Rotation = "</span> + z + <span class="val">"deg&lt;br&gt;"</span>;
+        
+        report_box.innerHTML = report;
+        
+        x = sensor.x * <span class="val">100</span>;
+        y = sensor.y * <span class="val">100</span>;
+        z = sensor.z * <span class="val">-33</span>;
+        
+        ball.style.left = (ball.offsetLeft + x) + <span class="val">"px"</span>;
+        ball.style.top = (ball.offsetTop - y) + <span class="val">"px"</span>;
+        ball.style.transform = <span class="val">"rotate("</span> + z + <span class="val">"deg)"</span>;
+    };
+    
+    sensor.onerror = errorHandler;
+    
+    <span class="keyword">function</span> <span class="built-in">errorHandler</span>(event){
+        console.log(event.error.name, event.error.message);
+    }
+<span class="tag">&lt;/script&gt;</span></code></pre>
+    </div>
+
+    <div class="slide">
+        <h2>3. Handling Screen Orientation (Landscape vs Portrait)</h2>
+        <pre><code><span class="built-in">window</span>.addEventListener(<span class="val">'orientationchange'</span>, <span class="keyword">function</span>(ev) {
+    <span class="keyword">var</span> isLandscape = (<span class="built-in">window</span>.innerWidth &gt; <span class="built-in">window</span>.innerHeight);
+    <span class="comment">// is in landscape mode</span>
+});</code></pre>
+    </div>
+
+    <div class="slide">
+        <h2>4. Device Orientation Data (Alpha, Beta, Gamma)</h2>
+        <pre><code><span class="built-in">window</span>.addEventListener(<span class="val">'deviceorientation'</span>, <span class="keyword">function</span>(ev) {
+    <span class="built-in">console</span>.info(ev.alpha, ev.beta, ev.gamma);
+});</code></pre>
+    </div>
+
+</body>
+</html>

@@ -9,6 +9,9 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%231976d2' width='192' height='192'/><circle cx='96' cy='96' r='40' fill='%23fff'/><circle cx='96' cy='96' r='24' fill='%231976d2'/></svg>">
     <link rel="stylesheet" href="styles.css">
+    <!-- Leaflet Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
     <div class="container">
@@ -22,10 +25,10 @@
         </header>
 
         <!-- Map Container -->
-        <div id="map" class="map-container">
-            <div class="map-placeholder">
-                <p>Map will load here</p>
-                <p id="map-status">Initializing...</p>
+        <div id="mapContainer" class="map-container">
+            <div id="map" class="map-leaflet"></div>
+            <div class="map-overlay">
+                <p id="map-status">Initializing map...</p>
             </div>
         </div>
 
