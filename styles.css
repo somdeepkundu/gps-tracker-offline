@@ -283,11 +283,74 @@ html, body {
     background: white;
     border-radius: 12px;
     max-width: 90%;
-    max-height: 80vh;
+    max-height: 90vh;
     width: 500px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+}
+
+.consent-modal {
+    max-height: 95vh;
+    width: 95%;
+}
+
+.consent-body {
+    overflow-y: auto;
+    padding: 1.5rem;
+}
+
+.privacy-notice {
+    margin-bottom: 1.5rem;
+}
+
+.privacy-notice h3 {
+    color: var(--primary);
+    margin-bottom: 1rem;
+    font-size: 1.125rem;
+}
+
+.notice-item {
+    background: var(--light);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    border-left: 4px solid var(--primary);
+}
+
+.notice-item strong {
+    display: block;
+    color: var(--primary);
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.notice-item p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--text-light);
+    line-height: 1.4;
+}
+
+.privacy-policy {
+    background: #e3f2fd;
+    border: 1px solid var(--primary);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+    color: var(--text);
+}
+
+.privacy-policy p {
+    margin: 0;
+}
+
+.consent-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1.5rem;
 }
 
 .modal-header {

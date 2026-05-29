@@ -81,6 +81,54 @@
         </div>
     </div>
 
+    <!-- Privacy Consent Modal -->
+    <div id="privacyModal" class="modal active">
+        <div class="modal-content consent-modal">
+            <div class="modal-header">
+                <h2>📍 Privacy & GPS Consent</h2>
+            </div>
+            <div class="consent-body">
+                <div class="privacy-notice">
+                    <h3>Your Privacy is Protected</h3>
+
+                    <div class="notice-item">
+                        <strong>✓ One-Way GPS Service</strong>
+                        <p>GPS data is collected only on YOUR device using the Geolocation API.</p>
+                    </div>
+
+                    <div class="notice-item">
+                        <strong>✓ NO Data Sharing</strong>
+                        <p>No data is sent to any server, cloud, or shared with anyone including the developer.</p>
+                    </div>
+
+                    <div class="notice-item">
+                        <strong>✓ Local Storage Only</strong>
+                        <p>All tracking data stays in your browser's IndexedDB. You control when to export or delete it.</p>
+                    </div>
+
+                    <div class="notice-item">
+                        <strong>✓ Fully Offline</strong>
+                        <p>This app works completely offline. No internet required to track your location.</p>
+                    </div>
+
+                    <div class="notice-item">
+                        <strong>✓ You're in Control</strong>
+                        <p>You can clear history, export data, or stop tracking anytime.</p>
+                    </div>
+
+                    <div class="privacy-policy">
+                        <p><strong>Browser Permission:</strong> Your browser will ask for location permission. You can deny or revoke it anytime in browser settings.</p>
+                    </div>
+                </div>
+
+                <div class="consent-actions">
+                    <button id="acceptConsent" class="btn btn-primary">I Understand & Accept</button>
+                    <button id="declineConsent" class="btn btn-outline">Decline (View Only Mode)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- History Modal -->
     <div id="historyModal" class="modal">
         <div class="modal-content">

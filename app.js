@@ -17,6 +17,7 @@ let locationMarker = null;
 let accuracyCircle = null;
 let trackLine = null;
 let mapReady = false;
+let userConsent = false;
 
 // Elements
 const statusEl = document.getElementById('status');
@@ -40,11 +41,22 @@ const historyModal = document.getElementById('historyModal');
 const closeHistoryBtn = document.getElementById('closeHistory');
 const historyList = document.getElementById('historyList');
 
+const privacyModal = document.getElementById('privacyModal');
+const acceptConsentBtn = document.getElementById('acceptConsent');
+const declineConsentBtn = document.getElementById('declineConsent');
+
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
     await initDB();
     registerServiceWorker();
     setupEventListeners();
+
+    // Check for existing consent
+    if (!checkExistingConsent()) {
+        // Show privacy consent modal
+        privacyModal.classList.add('active');
+    }
+
     initMap();
     checkOnlineStatus();
 
@@ -162,6 +174,32 @@ function addTrackPoint(lat, lon) {
     trackLine.addLatLng([lat, lon]);
 }
 
+// Consent Management
+function checkExistingConsent() {
+    const consent = localStorage.getItem('gps-tracker-consent');
+    if (consent === 'accepted') {
+        userConsent = true;
+        privacyModal.classList.remove('active');
+        return true;
+    }
+    return false;
+}
+
+function handleConsent(accepted) {
+    userConsent = accepted;
+
+    if (accepted) {
+        localStorage.setItem('gps-tracker-consent', 'accepted');
+        privacyModal.classList.remove('active');
+    } else {
+        localStorage.setItem('gps-tracker-consent', 'declined');
+        privacyModal.classList.remove('active');
+        startBtn.disabled = true;
+        startBtn.textContent = 'View Only Mode';
+        clearBtn.disabled = true;
+    }
+}
+
 // Event Listeners
 function setupEventListeners() {
     startBtn.addEventListener('click', startTracking);
@@ -170,10 +208,20 @@ function setupEventListeners() {
     exportBtn.addEventListener('click', exportData);
     historyBtn.addEventListener('click', showHistory);
     closeHistoryBtn.addEventListener('click', closeHistory);
+
+    acceptConsentBtn.addEventListener('click', () => handleConsent(true));
+    declineConsentBtn.addEventListener('click', () => handleConsent(false));
 }
 
 // GPS Tracking
 function startTracking() {
+    // Check consent
+    if (!userConsent) {
+        alert('You must accept the privacy terms to enable GPS tracking.');
+        privacyModal.classList.add('active');
+        return;
+    }
+
     if (!navigator.geolocation) {
         alert('Geolocation is not supported by your browser');
         return;
