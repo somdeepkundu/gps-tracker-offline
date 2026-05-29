@@ -1,4 +1,4 @@
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 
 // DB Setup
 const DB_NAME = 'GPSTrackerDB';
@@ -26,6 +26,8 @@ let compassMarker = null;
 // Elements
 const statusEl = document.getElementById('status');
 const accuracyEl = document.getElementById('accuracy');
+const headingEl = document.getElementById('heading');
+const versionBadge = document.getElementById('versionBadge');
 const latEl = document.getElementById('latitude');
 const lonEl = document.getElementById('longitude');
 const altEl = document.getElementById('altitude');
@@ -71,6 +73,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     initMap();
     initDeviceSensors();
     checkOnlineStatus();
+
+    // Display version
+    if (versionBadge) {
+        versionBadge.textContent = `v${VERSION}`;
+    }
 
     console.log(`GPS Tracker v${VERSION} ready`);
 
@@ -128,6 +135,13 @@ function initDeviceSensors() {
             // event.gamma: rotation around Y axis (-90 to 90)
 
             currentHeading = Math.round(event.alpha) || 0;
+
+            // Update heading display
+            headingEl.textContent = `🧭 ${currentHeading}° ${getDirectionName(currentHeading)}`;
+
+            // Update compass on map in real-time
+            updateCompassMarker();
+
             console.log(`Heading: ${currentHeading}°`);
         });
     }
@@ -143,6 +157,27 @@ function initDeviceSensors() {
     }
 
     console.log('Device sensors initialized');
+}
+
+// Update compass marker rotation in real-time
+function updateCompassMarker() {
+    if (!map || !mapReady || !compassMarker) return;
+
+    // Update the compass marker icon rotation
+    const compassElement = document.querySelector('.compass-marker');
+    if (compassElement) {
+        compassElement.style.transform = `rotate(${currentHeading}deg)`;
+    }
+
+    // Update popup
+    compassMarker.setPopupContent(`Heading: ${currentHeading}°<br/>Direction: ${getDirectionName(currentHeading)}`);
+}
+
+// Get compass direction name (N, NE, E, SE, etc.)
+function getDirectionName(heading) {
+    const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+    const index = Math.round(heading / 22.5) % 16;
+    return directions[index];
 }
 
 // Map Initialization
